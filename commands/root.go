@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/docker/docker/client"
 	"github.com/docker/model-cli/desktop"
@@ -24,7 +25,7 @@ func NewRootCmd() *cobra.Command {
 		fmt.Println("Failed to create Docker client:", err)
 		os.Exit(1)
 	}
-	desktopClient := desktop.New(dockerClient.HTTPClient(), os.Getenv("DMR_HOST"))
+	desktopClient := desktop.New(dockerClient.HTTPClient(), strings.TrimRight(os.Getenv("DMR_HOST"), "/"))
 	rootCmd.AddCommand(
 		newVersionCmd(),
 		newStatusCmd(desktopClient),
