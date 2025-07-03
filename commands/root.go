@@ -6,6 +6,7 @@ import (
 	"github.com/docker/cli/cli-plugins/plugin"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
+	"github.com/docker/model-cli/commands/otel"
 	"github.com/docker/model-cli/desktop"
 	"github.com/spf13/cobra"
 )
@@ -71,7 +72,14 @@ func NewRootCmd(cli *command.DockerCli) *cobra.Command {
 				return fmt.Errorf("unable to detect model runner context: %w", err)
 			}
 			desktopClient = desktop.New(modelRunner)
+
+			ctx := otel.SetupTracing(cmd.Context())
+			cmd.SetContext(ctx)
+
 			return nil
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			otel.CleanupTracing(cmd.Context())
 		},
 		// If running standalone, then we'll register global Docker flags as
 		// top-level flags on the root command, so we'll have to set
@@ -92,26 +100,26 @@ func NewRootCmd(cli *command.DockerCli) *cobra.Command {
 		globalOptions.InstallFlags(rootCmd.Flags())
 	}
 
-	// Add subcommands.
+	// Add subcommands (with tracing).
 	rootCmd.AddCommand(
-		newVersionCmd(),
-		newStatusCmd(),
-		newPullCmd(),
-		newPushCmd(),
-		newPackagedCmd(),
-		newListCmd(),
-		newLogsCmd(),
-		newRunCmd(),
-		newRemoveCmd(),
-		newInspectCmd(),
-		newComposeCmd(),
-		newTagCmd(),
-		newInstallRunner(),
-		newUninstallRunner(),
-		newConfigureCmd(),
-		newPSCmd(),
-		newDFCmd(),
-		newUnloadCmd(),
+		otel.WrapCommandWithSpan(newVersionCmd()),
+		otel.WrapCommandWithSpan(newStatusCmd()),
+		otel.WrapCommandWithSpan(newPullCmd()),
+		otel.WrapCommandWithSpan(newPushCmd()),
+		otel.WrapCommandWithSpan(newPackagedCmd()),
+		otel.WrapCommandWithSpan(newListCmd()),
+		otel.WrapCommandWithSpan(newLogsCmd()),
+		otel.WrapCommandWithSpan(newRunCmd()),
+		otel.WrapCommandWithSpan(newRemoveCmd()),
+		otel.WrapCommandWithSpan(newInspectCmd()),
+		otel.WrapCommandWithSpan(newComposeCmd()),
+		otel.WrapCommandWithSpan(newTagCmd()),
+		otel.WrapCommandWithSpan(newInstallRunner()),
+		otel.WrapCommandWithSpan(newUninstallRunner()),
+		otel.WrapCommandWithSpan(newConfigureCmd()),
+		otel.WrapCommandWithSpan(newPSCmd()),
+		otel.WrapCommandWithSpan(newDFCmd()),
+		otel.WrapCommandWithSpan(newUnloadCmd()),
 	)
 	return rootCmd
 }
